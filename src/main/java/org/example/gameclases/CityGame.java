@@ -4,21 +4,18 @@ import org.example.utils.MoveState;
 import org.example.utils.PlayerState;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CityGame extends Thread {
     private List<String> cities;
-    private Player human;
-    private Player comp;
     private String curCity;
     private String lastSymbol = "";
-    private Deque<Gamer> players;
+    private Deque<Player> players;
     private final List<String> INCORRECT_SYMBOL = Arrays.asList("И", "Й", "Ї", "Ь", "-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", " ");
-    private final HashMap<Gamer, PlayerState> PLAYERS_PROGRESS = new HashMap<>();
+    private final HashMap<Player, PlayerState> PLAYERS_PROGRESS = new HashMap<>();
 
-    public CityGame(Player human, Player comp, List<String> cities, Deque<Gamer> players) {
+    public CityGame(List<String> cities, Deque<Player> players) {
         this.cities = cities;
-        this.human = human;
-        this.comp = comp;
         this.players = players;
     }
 
@@ -50,7 +47,7 @@ public class CityGame extends Thread {
 
     public String checkPlayersStatus() {
         StringBuilder summary = new StringBuilder();
-        for (Map.Entry<Gamer, PlayerState> entry : PLAYERS_PROGRESS.entrySet()) {
+        for (Map.Entry<Player, PlayerState> entry : PLAYERS_PROGRESS.entrySet()) {
             if (entry.getKey().getPlayerState().equals(PlayerState.INGAME)) {
                 summary.append(entry.getKey().getName())
                         .append(": ходи ")
@@ -66,30 +63,33 @@ public class CityGame extends Thread {
         return summary.toString();
     }
 
-    private void setPlayerLose(Gamer curPlayer) {
+    private void setPlayerLose(Player curPlayer) {
         curPlayer.setPlayerState(PlayerState.LOSE);
         PLAYERS_PROGRESS.put(curPlayer, curPlayer.getPlayerState());
         players.pop();
     }
 
-    private void setWinnerAndLose(Gamer curPlayer) {
+    private void setWinnerAndLose(Player curPlayer) {
         curPlayer.setPlayerState(PlayerState.WIN);
         PLAYERS_PROGRESS.put(curPlayer, curPlayer.getPlayerState());
-        while (players.size() > 0) {
-            curPlayer = players.getFirst();
-            setPlayerLose(curPlayer);
+        List<Player> collect = players.stream()
+                .filter(pl -> pl.getPlayerState() != PlayerState.WIN)
+                .collect(Collectors.toList());
+        for (Player player : collect) {
+            setPlayerLose(player);
         }
     }
 
-    private void backOfQueue(Gamer curPlayer) {
+    private void backOfQueue(Player curPlayer) {
         PLAYERS_PROGRESS.put(curPlayer, curPlayer.getPlayerState());
         players.pop();
         players.addLast(curPlayer);
     }
 
     public boolean processGame(String enteredValue) {
-        Gamer curPlayer = players.getFirst();
-        if (enteredValue.equals("Здаюся")) {
+        System.out.println("players.size() = " + players.size());
+        Player curPlayer = players.peekFirst();
+        if (enteredValue.equals(MoveState.SURRENDER.name())) {
             setPlayerLose(curPlayer);
             enteredValue = "";
             curPlayer = players.getFirst();
@@ -103,7 +103,7 @@ public class CityGame extends Thread {
                 case CORRECT:
                     setCurCity(curPlayer.getEneteredValue());
                     setLastSymbol(curPlayer.getEneteredValue());
-                    if (gameCanGoOn() == true) {
+                    if (gameCanGoOn()) {
                         backOfQueue(curPlayer);
                         if (!players.getFirst().isHuman()) {
                             processGame("");
@@ -115,12 +115,12 @@ public class CityGame extends Thread {
                 case UNCORRECT:
                     return false;
                 case NOMOVE:
-                    PLAYERS_PROGRESS.put(curPlayer, curPlayer.getPlayerState());
-                    players.pop();
+                    setPlayerLose(curPlayer);
                     return true;
             }
         } else {
             setWinnerAndLose(curPlayer);
+
         }
         return false;
     }

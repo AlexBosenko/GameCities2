@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-public class Comp extends Gamer {
+public class Comp extends Player {
     public Comp() {
-        super("Comp", false);
+        super("Comp");
     }
 
     @Override

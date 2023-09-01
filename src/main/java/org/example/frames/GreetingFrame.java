@@ -1,9 +1,8 @@
 package org.example.frames;
 
 import org.example.gameclases.Comp;
-import org.example.gameclases.Gamer;
-import org.example.gameclases.Human;
 import org.example.gameclases.Player;
+import org.example.gameclases.Human;
 import org.example.utils.GameMode;
 
 import javax.swing.*;
@@ -13,8 +12,6 @@ import java.awt.event.ActionListener;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.HashMap;
-import java.util.Queue;
 
 public class GreetingFrame extends JFrame implements ActionListener {
     JMenuBar menuBar;
@@ -24,7 +21,7 @@ public class GreetingFrame extends JFrame implements ActionListener {
     JButton b;
     final Font font = new Font(Font.DIALOG, Font.BOLD, 15);
     private GameMode gameMode = GameMode.OFFLINE;
-    private Deque<Gamer> players = new ArrayDeque<>();
+    private Deque<Player> players = new ArrayDeque<>();
 
     public GreetingFrame() {
         super("Вітаємо!");
@@ -65,7 +62,9 @@ public class GreetingFrame extends JFrame implements ActionListener {
     }
 
     private void setDefaultPlayers() {
-        players.add(new Human("Alex", true));
+        players.add(new Human("Alex"));
+        players.add(new Human("Gregor"));
+        players.add(new Human("Igor"));
         players.add(new Comp());
     }
 
@@ -85,8 +84,6 @@ public class GreetingFrame extends JFrame implements ActionListener {
     }
 
     public static void main(String[] args) throws UnsupportedEncodingException {
-//        String hello = "Вітаємо вас у грі дитинства і всіх розумників!";
-//        String helloConvert = new String(hello.getBytes("windows-1251"), "UTF-8");
         new GreetingFrame();
     }
 }

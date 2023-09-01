@@ -1,27 +1,48 @@
 package org.example.gameclases;
 
-public class Player {
-    private boolean canMove;
+import org.example.utils.MoveState;
+import org.example.utils.PlayerState;
+
+import java.util.List;
+
+public abstract class Player {
     private String name;
-
-    public Player(String name, boolean canMove) {
+    private String eneteredValue;
+    private int moves = 0;
+    private PlayerState playerState;
+    public Player(String name) {
         this.name = name;
-        this.canMove = canMove;
-    }
-
-    public boolean isCanMove() {
-        return canMove;
-    }
-
-    public void setCanMove(boolean canMove) {
-        this.canMove = canMove;
+        this.playerState = PlayerState.INGAME;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public String getEneteredValue() {
+        return eneteredValue;
     }
+
+    public void setEneteredValue(String eneteredValue) {
+        this.eneteredValue = eneteredValue;
+    }
+
+    public int getMoves() {
+        return moves;
+    }
+
+    public void increaseMoves() {
+        this.moves++;
+    }
+
+    public PlayerState getPlayerState() {
+        return playerState;
+    }
+
+    public void setPlayerState(PlayerState playerState) {
+        this.playerState = playerState;
+    }
+
+    public abstract MoveState process(List<String> cities, String lastSymbol, String enteredValue);
+    public abstract boolean isHuman();
 }

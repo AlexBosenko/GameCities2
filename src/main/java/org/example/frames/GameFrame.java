@@ -1,10 +1,10 @@
 package org.example.frames;
 
 import org.example.gameclases.CityGame;
-import org.example.gameclases.Gamer;
 import org.example.gameclases.Player;
 import org.example.utils.CitiesOfUkraine;
 import org.example.utils.GameMode;
+import org.example.utils.MoveState;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,7 +12,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -30,14 +29,12 @@ public class GameFrame extends JFrame implements ActionListener {
     final Font font = new Font(Font.DIALOG, Font.BOLD, 15);
     private static boolean gameStarted = false;
     private List<String> cities;
-    private static Player human;
-    private static Player comp;
     private static CityGame cityGame;
     private static ScheduledExecutorService executorService;
     private static GameMode gameMode;
-    private static Deque<Gamer> players;
+    private static Deque<Player> players;
 
-    public GameFrame(GameMode gameMode, Deque<Gamer> players) {
+    public GameFrame(GameMode gameMode, Deque<Player> players) {
         super("Успіхів!");
         this.gameMode = gameMode;
         this.players = players;
@@ -74,7 +71,8 @@ public class GameFrame extends JFrame implements ActionListener {
         lbComp.setBounds(200, 70, 250, 30);
         lbComp.setFont(font);
 
-        lbStatus = new JLabel("Місто введене не вірно");
+        //lbStatus = new JLabel("Місто введене не вірно");
+        lbStatus = new JLabel("");
         lbStatus.setBounds(240, 110, 200, 30);
 
         taSummary = new JTextArea();
@@ -106,10 +104,7 @@ public class GameFrame extends JFrame implements ActionListener {
             cities = CitiesOfUkraine.getCityNames();
         }
 
-        human = new Player("Alex", true);
-        comp = new Player("Comp", false);
-
-        cityGame = new CityGame(human, comp, cities, players);
+        cityGame = new CityGame(cities, players);
         //cityGame.start();
 
         setComponentValues(true, "Стоп");
@@ -127,8 +122,7 @@ public class GameFrame extends JFrame implements ActionListener {
     }
 
     private static void checkStatusGame() {
-        Gamer curPlayer = players.getFirst();
-        String playerName = "";
+        Player curPlayer = players.getFirst();
         taSummary.setText(cityGame.checkPlayersStatus());
         lbComp.setText(curPlayer.isHuman() ? "Комп'ютер: " + cityGame.getCurCity() : "Комп'ютер: ");
         lbComment.setText(curPlayer.getName() + " вам на " + "\"" + cityGame.getLastSymbol() + "\"");
@@ -164,13 +158,19 @@ public class GameFrame extends JFrame implements ActionListener {
         if (e.getSource() == btEnterCity) {
             if (players.getFirst().isHuman()) {
                 boolean result = cityGame.processGame(tfInputCity.getText());
-                lbStatus.setText(result == true ? "" : "Місто введене не вірно");
+                if (result) {
+                    tfInputCity.setText("");
+                    lbStatus.setText("");
+                } else {
+
+                }
+                lbStatus.setText("Місто введене не вірно");
             }
 //            if (human.isCanMove()) {
 //                checkEnteredValue();
 //            }
         } else if (e.getSource() == btSurrender) {
-            cityGame.processGame("Здаюся");
+            cityGame.processGame(MoveState.SURRENDER.name());
         } else if (e.getSource() == btStart) {
             if (!gameStarted) {
                 try {

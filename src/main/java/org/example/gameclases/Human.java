@@ -1,14 +1,12 @@
 package org.example.gameclases;
 
 import org.example.utils.MoveState;
-import org.example.utils.PlayerState;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class Human extends Gamer {
-    public Human(String name, boolean canMove) {
-        super(name, canMove);
+public class Human extends Player {
+    public Human(String name) {
+        super(name);
     }
 
     @Override
