@@ -22,6 +22,7 @@ public class GameFrame extends JFrame implements ActionListener {
     static JTextField tfInputCity;
     static JButton btEnterCity;
     static JButton btStart;
+    static JButton btSurrender;
     static JLabel lbComment;
     static JLabel lbComp;
     static JLabel lbStatus;
@@ -33,8 +34,8 @@ public class GameFrame extends JFrame implements ActionListener {
     private static Player comp;
     private static CityGame cityGame;
     private static ScheduledExecutorService executorService;
-    GameMode gameMode;
-    private Deque<Gamer> players;
+    private static GameMode gameMode;
+    private static Deque<Gamer> players;
 
     public GameFrame(GameMode gameMode, Deque<Gamer> players) {
         super("Успіхів!");
@@ -56,9 +57,14 @@ public class GameFrame extends JFrame implements ActionListener {
         btEnterCity.addActionListener(this);
 
         btStart = new JButton("Старт!");
-        btStart.setBounds(200, 110, 100, 30);
+        btStart.setBounds(30, 110, 100, 30);
         btStart.setFont(font);
         btStart.addActionListener(this);
+
+        btSurrender = new JButton("Здаюся!");
+        btSurrender.setBounds(130, 110, 100, 30);
+        btSurrender.setFont(font);
+        btSurrender.addActionListener(this);
 
         lbComment = new JLabel("Введіть назву міста");
         lbComment.setBounds(200, 30, 250, 30);
@@ -68,15 +74,16 @@ public class GameFrame extends JFrame implements ActionListener {
         lbComp.setBounds(200, 70, 250, 30);
         lbComp.setFont(font);
 
-        lbStatus = new JLabel("");
-        lbStatus.setBounds(320, 110, 200, 30);
+        lbStatus = new JLabel("Місто введене не вірно");
+        lbStatus.setBounds(240, 110, 200, 30);
 
         taSummary = new JTextArea();
-        taSummary.setBounds(450, 30, 250, 200);
+        taSummary.setBounds(410, 30, 160, 100);
 
         add(tfInputCity);
         add(btEnterCity);
         add(btStart);
+        add(btSurrender);
         add(lbComment);
         add(lbComp);
         add(lbStatus);
@@ -84,7 +91,7 @@ public class GameFrame extends JFrame implements ActionListener {
     }
 
     private void configureFrame() {
-        setSize(510, 190);
+        setSize(600, 190);
         setLocationRelativeTo(null);
         setResizable(false);
         setLayout(null);
@@ -113,14 +120,21 @@ public class GameFrame extends JFrame implements ActionListener {
 
     private static void stopGame() {
         executorService.shutdown();
-        cityGame.interrupt();
+        //cityGame.interrupt();
         setComponentValues(false, "Старт!");
         setLabelDefaultText();
+        System.out.println("Stop game");
     }
 
     private static void checkStatusGame() {
+        Gamer curPlayer = players.getFirst();
+        String playerName = "";
         taSummary.setText(cityGame.checkPlayersStatus());
-
+        lbComp.setText(curPlayer.isHuman() ? "Комп'ютер: " + cityGame.getCurCity() : "Комп'ютер: ");
+        lbComment.setText(curPlayer.getName() + " вам на " + "\"" + cityGame.getLastSymbol() + "\"");
+        if (!cityGame.gameCanGoOn()) {
+            stopGame();
+        }
 //        String playerName = "";
 //        if (human.isCanMove()) {
 //            playerName = human.getName();
@@ -149,11 +163,14 @@ public class GameFrame extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btEnterCity) {
             if (players.getFirst().isHuman()) {
-                cityGame.processGame(tfInputCity.getText());
+                boolean result = cityGame.processGame(tfInputCity.getText());
+                lbStatus.setText(result == true ? "" : "Місто введене не вірно");
             }
 //            if (human.isCanMove()) {
 //                checkEnteredValue();
 //            }
+        } else if (e.getSource() == btSurrender) {
+            cityGame.processGame("Здаюся");
         } else if (e.getSource() == btStart) {
             if (!gameStarted) {
                 try {
@@ -171,7 +188,6 @@ public class GameFrame extends JFrame implements ActionListener {
         gameStarted = action;
         btStart.setText(text);
         btEnterCity.setEnabled(action);
-
     }
 
     private static void setLabelDefaultText() {

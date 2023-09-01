@@ -10,11 +10,10 @@ public class CityGame extends Thread {
     private Player human;
     private Player comp;
     private String curCity;
-    private String enteredValue;
     private String lastSymbol = "";
     private Deque<Gamer> players;
-    private List<String> incorrectSymbol = Arrays.asList("И", "Й", "Ї", "Ь", "-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", " ");
-    private HashMap<Gamer, PlayerState> playersProgress;
+    private final List<String> INCORRECT_SYMBOL = Arrays.asList("И", "Й", "Ї", "Ь", "-", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", " ");
+    private final HashMap<Gamer, PlayerState> PLAYERS_PROGRESS = new HashMap<>();
 
     public CityGame(Player human, Player comp, List<String> cities, Deque<Gamer> players) {
         this.cities = cities;
@@ -35,12 +34,13 @@ public class CityGame extends Thread {
         int index = 1;
         int length = cityName.length();
         String symbol = cityName.substring(length - index, length - index + 1).toUpperCase();
-        while (incorrectSymbol.contains(symbol) && length - index >= 0) {
+        while (INCORRECT_SYMBOL.contains(symbol) && length - index >= 0) {
             index++;
             symbol = cityName.substring(length - index, length - index + 1).toUpperCase();
         }
 
         this.lastSymbol = symbol;
+        cities.remove(cities.indexOf(cityName));
     }
 
 
@@ -50,47 +50,77 @@ public class CityGame extends Thread {
 
     public String checkPlayersStatus() {
         StringBuilder summary = new StringBuilder();
-//        for (Gamer player : playersProgress.keySet()) {
-//            if (player.)
-//            summary.append(player.getName() + ": ходи " + player.getMoves() + "\n");
-//        }
-        for (Map.Entry<Gamer, PlayerState> entry : playersProgress.entrySet()) {
-            summary.append(entry.getKey().getName())
-                    .append(": ходи ")
-                    .append(entry.getKey().getMoves())
-                    .append("\n");
+        for (Map.Entry<Gamer, PlayerState> entry : PLAYERS_PROGRESS.entrySet()) {
+            if (entry.getKey().getPlayerState().equals(PlayerState.INGAME)) {
+                summary.append(entry.getKey().getName())
+                        .append(": ходи ")
+                        .append(entry.getKey().getMoves())
+                        .append("\n");
+            } else {
+                summary.append(entry.getKey().getName())
+                        .append(": ")
+                        .append(entry.getKey().getPlayerState())
+                        .append("\n");
+            }
         }
         return summary.toString();
     }
+
+    private void setPlayerLose(Gamer curPlayer) {
+        curPlayer.setPlayerState(PlayerState.LOSE);
+        PLAYERS_PROGRESS.put(curPlayer, curPlayer.getPlayerState());
+        players.pop();
+    }
+
+    private void setWinnerAndLose(Gamer curPlayer) {
+        curPlayer.setPlayerState(PlayerState.WIN);
+        PLAYERS_PROGRESS.put(curPlayer, curPlayer.getPlayerState());
+        while (players.size() > 0) {
+            curPlayer = players.getFirst();
+            setPlayerLose(curPlayer);
+        }
+    }
+
+    private void backOfQueue(Gamer curPlayer) {
+        PLAYERS_PROGRESS.put(curPlayer, curPlayer.getPlayerState());
+        players.pop();
+        players.addLast(curPlayer);
+    }
+
     public boolean processGame(String enteredValue) {
         Gamer curPlayer = players.getFirst();
-        MoveState result = curPlayer.process(cities, lastSymbol, enteredValue);
-        switch (result) {
-            case CORRECT:
-                setCurCity(curPlayer.getEneteredValue());
-                setLastSymbol(curPlayer.getEneteredValue());
-                if (gameCanGoOn() == true) {
-                    playersProgress.put(curPlayer, curPlayer.getPlayerState());
-                    players.pop();
-                    players.addLast(curPlayer);
-                    if (!players.getFirst().isHuman()) {
-                        processGame("");
+        if (enteredValue.equals("Здаюся")) {
+            setPlayerLose(curPlayer);
+            enteredValue = "";
+            curPlayer = players.getFirst();
+            if (curPlayer.isHuman()) {
+                return true;
+            }
+        }
+        if (gameCanGoOn()) {
+            MoveState result = curPlayer.process(cities, lastSymbol, enteredValue);
+            switch (result) {
+                case CORRECT:
+                    setCurCity(curPlayer.getEneteredValue());
+                    setLastSymbol(curPlayer.getEneteredValue());
+                    if (gameCanGoOn() == true) {
+                        backOfQueue(curPlayer);
+                        if (!players.getFirst().isHuman()) {
+                            processGame("");
+                        }
+                    } else {
+                        setWinnerAndLose(curPlayer);
                     }
                     return true;
-                } else {
-                    curPlayer.setPlayerState(PlayerState.WIN);
-                    playersProgress.put(curPlayer, curPlayer.getPlayerState());
-                    while (players.size() > 0) {
-                        curPlayer = players.getFirst();
-                        curPlayer.setPlayerState(PlayerState.LOSE);
-                    }
-                }
-            case UNCORRECT:
-                return false;
-            case NOMOVE:
-                playersProgress.put(curPlayer, curPlayer.getPlayerState());
-                players.pop();
-                return true;
+                case UNCORRECT:
+                    return false;
+                case NOMOVE:
+                    PLAYERS_PROGRESS.put(curPlayer, curPlayer.getPlayerState());
+                    players.pop();
+                    return true;
+            }
+        } else {
+            setWinnerAndLose(curPlayer);
         }
         return false;
     }
@@ -99,7 +129,7 @@ public class CityGame extends Thread {
         long count = cities.stream()
                 .filter(str -> str.startsWith(lastSymbol))
                 .count();
-        return count > 0;
+        return (count > 0 && players.size() > 1);
     }
 
     public long checkStatus() {
